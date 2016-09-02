@@ -277,19 +277,26 @@ void DataLoader::set_up_class_generators() {
   end_iterating_lines(true);
   uniform_index_per_class_ = vector<std::uniform_int_distribution<int> >();
   for (int index = 0; index < kNumberOfClasses; ++index) {
-    uniform_index_per_class_.push_back(
-        std::uniform_int_distribution<int>(
-            0,
-            static_cast<int>(class_inverse_index_[index].size()) - 1));
+    if(class_inverse_index_[index].size() > 0){
+      uniform_index_per_class_.push_back(
+          std::uniform_int_distribution<int>(
+              0,
+              static_cast<int>(class_inverse_index_[index].size()) - 1));
+     } else {
+       uniform_index_per_class_.push_back(
+          std::uniform_int_distribution<int>(0, 1));
+    }
   }
 }
 int DataLoader::sample_class_index() {
   float random_in_01 = uniform_distribution_(random_engine_);
   for (int class_index = 0; class_index < kNumberOfClasses; ++class_index) {
-    if (random_in_01 <= class_sampling_intervals_[class_index]) {
-      return class_index;
+    if (random_in_01 <= class_sampling_intervals_[class_index]){
+      if(class_inverse_index_[class_index].size() > 0) return class_index;
+      return sample_class_index(); //class without any samples selected; retry;
     }
   }
+  throw; //this point should never be reached
 }
 int DataLoader::sample_from_class(int class_index) {
   return class_inverse_index_[class_index]
