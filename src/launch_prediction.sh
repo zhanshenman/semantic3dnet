@@ -1,4 +1,6 @@
 #!/usr/bin/env bash
+source ~/.bashrc
+
 export OMP_NUM_THREADS=5
 
 export CUDA_VISIBLE_DEVICES=0

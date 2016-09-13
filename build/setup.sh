@@ -2,12 +2,25 @@
 mkdir ../data
 mkdir ../data/benchmark
 cd ../data/benchmark
-wget http://www.semantic3d.net/data/point-clouds/training1/bildstein_station1_xyz_intensity_rgb.7z
 wget http://www.semantic3d.net/data/point-clouds/testing2/MarketplaceFeldkirch_Station4_rgb_intensity-reduced.txt.7z
 wget http://www.semantic3d.net/data/point-clouds/testing2/StGallenCathedral_station6_rgb_intensity-reduced.txt.7z
 wget http://www.semantic3d.net/data/point-clouds/testing2/sg27_station10_rgb_intensity-reduced.txt.7z
 wget http://www.semantic3d.net/data/point-clouds/testing2/sg28_Station2_rgb_intensity-reduced.txt.7z
-wget http://www.semantic3d.net/data/point-clouds/training1/sg28_station4_intensity_rgb.7z
+wget http://www.semantic3d.net/data/point-clouds/training1/bildstein_station1_xyz_intensity_rgb.7z
+wget http://semantic3d.net/data/point-clouds/training1/bildstein_station3_xyz_intensity_rgb.7z
+wget http://semantic3d.net/data/point-clouds/training1/bildstein_station5_xyz_intensity_rgb.7z
+wget http://semantic3d.net/data/point-clouds/training1/domfountain_station1_xyz_intensity_rgb.7z
+wget http://semantic3d.net/data/point-clouds/training1/domfountain_station2_xyz_intensity_rgb.7z
+wget http://semantic3d.net/data/point-clouds/training1/domfountain_station3_xyz_intensity_rgb.7z
+wget http://semantic3d.net/data/point-clouds/training1/neugasse_station1_xyz_intensity_rgb.7z
+wget http://semantic3d.net/data/point-clouds/training1/sg27_station1_intensity_rgb.7z
+wget http://semantic3d.net/data/point-clouds/training1/sg27_station2_intensity_rgb.7z
+wget http://semantic3d.net/data/point-clouds/training1/sg27_station4_intensity_rgb.7z
+wget http://semantic3d.net/data/point-clouds/training1/sg27_station5_intensity_rgb.7z
+wget http://semantic3d.net/data/point-clouds/training1/sg27_station9_intensity_rgb.7z
+wget http://semantic3d.net/data/point-clouds/training1/sg28_station4_intensity_rgb.7z
+wget http://semantic3d.net/data/point-clouds/training1/untermaederbrunnen_station1_xyz_intensity_rgb.7z
+wget http://semantic3d.net/data/point-clouds/training1/untermaederbrunnen_station3_xyz_intensity_rgb.7z
 wget http://www.semantic3d.net/data/sem8_labels_training.7z
 wget https://dl.dropboxusercontent.com/u/7069946/p7zip-binary-64bit.zip
 unzip p7zip-binary-64bit.zip
@@ -23,8 +36,21 @@ convert_to_train () {
 convert_to_test () {
   cut -d' ' -f1,2,3 $1.txt > $1_test.txt
 }
-convert_to_train sg28_station4_intensity_rgb
 convert_to_train bildstein_station1_xyz_intensity_rgb
+convert_to_train bildstein_station3_xyz_intensity_rgb
+convert_to_train bildstein_station5_xyz_intensity_rgb
+convert_to_train domfountain_station1_xyz_intensity_rgb
+convert_to_train domfountain_station2_xyz_intensity_rgb
+convert_to_train domfountain_station3_xyz_intensity_rgb
+convert_to_train neugasse_station1_xyz_intensity_rgb
+convert_to_train sg27_station1_intensity_rgb
+convert_to_train sg27_station2_intensity_rgb
+convert_to_train sg27_station4_intensity_rgb
+convert_to_train sg27_station5_intensity_rgb
+convert_to_train sg27_station9_intensity_rgb
+convert_to_train sg28_station4_intensity_rgb
+convert_to_train untermaederbrunnen_station1_xyz_intensity_rgb
+convert_to_train untermaederbrunnen_station3_xyz_intensity_rgb
 convert_to_test MarketplaceFeldkirch_Station4_rgb_intensity-reduced
 convert_to_test StGallenCathedral_station6_rgb_intensity-reduced
 convert_to_test sg27_station10_rgb_intensity-reduced

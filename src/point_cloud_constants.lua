@@ -31,9 +31,15 @@ function define_constants()
   opt.kSmallPrintingInterval = 2
   opt.number_of_filters = 16
   opt.kLargePrintingInterval = 100
-  opt.kWarmStart = false
+  opt.kWarmStart = true
   opt.kModelDumpName = '../dump/model_dump'
   opt.kOptimStateDumpName = '../dump/optim_state_dump'
   opt.kStreamingPath = '../data/benchmark/sg28_station4_intensity_rgb_train.txt'
+
+  opt.learningRate = 0.03
+  opt.learningRateDecay = 0.0
+  opt.momentum = 0.9
+  opt.dampening = 0.0
+  opt.weightDecay = 5e-4
   return opt
 end
