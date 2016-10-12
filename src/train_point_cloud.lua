@@ -15,6 +15,7 @@ torch.manualSeed(10000)
 cutorch.manualSeed(10000)
 local opt = define_constants()
 
+
 --local optim_method = optim.sgd
 local optim_method = optim.adadelta
 
@@ -40,7 +41,9 @@ else
   optim_state = {}
   optim_state.epoch = 1
   set_up_loader(optim_state.epoch, opt)
-  model = define_model(opt.kSide, opt.n_outputs, opt.number_of_filters, opt.kNumberOfScales, opt.kNumberOfRotations)
+  --model = define_vgg_model(opt.kSide, opt.n_outputs, opt.number_of_filters, opt.kNumberOfScales, opt.kNumberOfRotations)
+  model = define_voxception_resnet_model(opt.kSide, opt.n_outputs, opt.number_of_filters, opt.number_blocks, opt.kNumberOfScales, opt.kNumberOfRotations)
+  --model = define_voxception_model(opt.kSide, opt.n_outputs, opt.number_of_filters, opt.number_blocks, opt.kNumberOfScales, opt.kNumberOfRotations)
 end
 optim_state.learningRate=opt.learningRate
 optim_state.learningRateDecay=opt.learningRateDecay

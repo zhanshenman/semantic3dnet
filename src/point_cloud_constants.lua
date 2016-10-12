@@ -29,7 +29,8 @@ function define_constants()
   opt.kNumberOfScales = cpp_options.kDefaultNumberOfScales
   opt.kNumberOfRotations = cpp_options.kDefaultNumberOfRotations
   opt.kSmallPrintingInterval = 2
-  opt.number_of_filters = 16
+  opt.number_of_filters = 2
+  opt.number_blocks = 4
   opt.kLargePrintingInterval = 100
   opt.kWarmStart = true
   opt.kModelDumpName = '../dump/model_dump'
