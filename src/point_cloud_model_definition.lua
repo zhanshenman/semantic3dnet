@@ -70,10 +70,7 @@ function voxception_block(input_planes, number_of_filters)
   local model_conc = nn.Concat(input_planes * number_of_filters)
   model_conc:add(model1)
   model_conc:add(model2)
-  local model_join = nn.Sequential()
-  model_join:add(model_conc)
-  model_join:add(nn.JoinTable(1))
-  return model_join
+  return model_conc
   --return model1
 end
 
@@ -141,9 +138,7 @@ function voxception_resnet_block(input_planes, number_of_filters, stride)
 end
 
 --voxception model from brock et al.
-function define_voxception_model(input_size, n_outputs, model_creation_input, initial_nr_planes, number_of_filters, number_of_blocks, number_of_scales, number_of_rotations)
-  local is = model_creation_input:size()
-  print(is)
+function define_voxception_model(input_size, n_outputs, initial_nr_planes, number_of_filters, number_of_blocks, number_of_scales, number_of_rotations)
   -- voxception model: single scale, single rotation
   local voxception_model = nn.Sequential()
   local number_planes = 1
@@ -152,17 +147,20 @@ function define_voxception_model(input_size, n_outputs, model_creation_input, in
   local conv_block = voxception_block(number_planes, initial_nr_planes)
   number_planes = initial_nr_planes * 2
   voxception_model:add(conv_block)
+  voxception_model:add(nn.JoinTable(1))
   for block_index = 2, number_of_blocks do
     --downsample block
-    downsample_block = voxception_downsample_block(number_planes, 1)
+    downsample_block = voxception_downsample_block(1, 1)
     voxception_model:add(downsample_block)
-
+    voxception_model:add(nn.JoinTable(1)) --join all planes into one
     --conv block
-    conv_block = voxception_block(number_planes, number_of_filters)
+    conv_block = voxception_block(1, number_of_filters)
     number_planes = number_planes * number_of_filters * 2
     prod_strides = prod_strides
     voxception_model:add(conv_block)
+    voxception_model:add(nn.JoinTable(1)) --join all planes into one
   end
+
   -- multi scale, single rotation
   local scale_parallel_model = nn.Parallel(2, 2)
   for scale_index = 1, number_of_scales do
