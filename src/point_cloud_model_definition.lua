@@ -61,16 +61,20 @@ function voxception_block(input_planes, number_of_filters)
   -- convolution 3x3x3
   local model1 = nn.Sequential()
   model1:add(nn.VolumetricConvolution(input_planes, input_planes * number_of_filters, 3, 3, 3, 1, 1, 1, 1, 1, 1))
-  model1:add(nn.VolumetricBatchNormalization(input_planes * number_of_filters))
+  --model1:add(nn.VolumetricBatchNormalization(input_planes * number_of_filters))
   -- convolution 1x1x1
   local model2 = nn.Sequential()
-  model2:add(nn.VolumetricConvolution(input_planes, input_planes * number_of_filters, 1, 1, 1, 1, 1, 1, 1, 1, 1))
-  model2:add(nn.VolumetricBatchNormalization(input_planes * number_of_filters))
-  local model = nn.Parallel(1,2);
-  -- parallel models (same input, concatenate outputs)
-  model:add(model1)
-  model:add(model2)
-  return model 
+  model2:add(nn.VolumetricConvolution(input_planes, input_planes * number_of_filters, 1, 1, 1, 1, 1, 1, 0, 0, 0))
+  --model2:add(nn.VolumetricBatchNormalization(input_planes * number_of_filters))
+  -- concatinate models (same input, concatenate outputs)
+  local model_conc = nn.Concat(input_planes * number_of_filters)
+  model_conc:add(model1)
+  model_conc:add(model2)
+  local model_join = nn.Sequential()
+  model_join:add(model_conc)
+  model_join:add(nn.JoinTable(1))
+  return model_join
+  --return model1
 end
 
 --voxception downsampling block from brock et al.
@@ -92,10 +96,10 @@ function voxception_downsample_block(input_planes, number_of_filters)
   model3:add(nn.VolumetricBatchNormalization(input_planes * number_of_filters))
   -- strided convolution 1x1x1, stride 2 
   local model4 = nn.Sequential()
-  model4:add(nn.VolumetricConvolution(input_planes, input_planes * number_of_filters, 1, 1, 1, 2, 2, 2, 1, 1, 1))
+  model4:add(nn.VolumetricConvolution(input_planes, input_planes * number_of_filters, 1, 1, 1, 2, 2, 2, 0, 0, 0))
   model4:add(nn.VolumetricBatchNormalization(input_planes * number_of_filters))
   -- parallel models (same input, concatenate outputs)
-  local model = nn.Parallel(1,2)
+  local model = nn.Concat(input_planes * number_of_filters)
   model:add(model1)
   model:add(model2)
   model:add(model3)
@@ -116,15 +120,15 @@ function voxception_resnet_block(input_planes, number_of_filters, stride)
 
   --1x1x1 convolution, 3x3x3 convolution, 1x1x1 convolution
   local m2 = nn.Sequential()
-  m2:add(nn.VolumetricConvolution(input_planes, (n_output1),1,1,1,1,1,1,1,1,1))
+  m2:add(nn.VolumetricConvolution(input_planes, (n_output1),1,1,1,1,1,1,0,0,0))
   m2:add(nn.VolumetricBatchNormalization((n_output1)))
   m2:add(nn.VolumetricConvolution((n_output1), (n_output1),3,3,3, stride,stride,stride, 1,1,1))
   m2:add(nn.VolumetricBatchNormalization((n_output1)))
-  m2:add(nn.VolumetricConvolution((n_output1), (n_output2),1,1,1,1,1,1,1,1,1))
+  m2:add(nn.VolumetricConvolution((n_output1), (n_output2),1,1,1,1,1,1,0,0,0))
   m2:add(nn.VolumetricBatchNormalization((n_output2)))
 
-  --parallel(concatinate different filters)
-  local s = nn.Parallel(1,2)
+  --concatinate different models
+  local s = nn.Concat(n_output2)
   s:add(m1)
   s:add(m2)
 
@@ -132,28 +136,33 @@ function voxception_resnet_block(input_planes, number_of_filters, stride)
   return nn.Sequential()
     :add(nn.ConcatTable()
       :add(s)
-      :add(nn.VolumetricConvolution(input_planes, n_output2, 1,1,1, stride,stride,stride, 1,1,1))) --TODO: use nn.Identity()?
+      :add(nn.VolumetricConvolution(input_planes, n_output2, 1,1,1, stride,stride,stride, 0,0,0))) --TODO: use nn.Identity()?
     :add(nn.CAddTable())
 end
 
 --voxception model from brock et al.
-function define_voxception_model(input_size, n_outputs, number_of_filters, number_of_blocks, number_of_scales, number_of_rotations)
-
+function define_voxception_model(input_size, n_outputs, model_creation_input, initial_nr_planes, number_of_filters, number_of_blocks, number_of_scales, number_of_rotations)
+  local is = model_creation_input:size()
+  print(is)
   -- voxception model: single scale, single rotation
   local voxception_model = nn.Sequential()
   local number_planes = 1
-  for block_index = 1, number_of_blocks do
-    local conv_block = voxception_block(number_planes, number_of_filters)
-    number_planes = number_planes * number_of_filters
-    voxception_model:add(conv_block)
-    local downsample_block = voxception_downsample_block(number_planes, 1)
-    voxception_model:add(downsample_block)
-  end
-  conv_block = voxception_block(number_planes, number_of_filters)
+  local prod_strides = 1
+  --input layer (first block)
+  local conv_block = voxception_block(number_planes, initial_nr_planes)
+  number_planes = initial_nr_planes * 2
   voxception_model:add(conv_block)
-  number_planes = number_planes * number_of_filters
-  --TODO: reshape output?
+  for block_index = 2, number_of_blocks do
+    --downsample block
+    downsample_block = voxception_downsample_block(number_planes, 1)
+    voxception_model:add(downsample_block)
 
+    --conv block
+    conv_block = voxception_block(number_planes, number_of_filters)
+    number_planes = number_planes * number_of_filters * 2
+    prod_strides = prod_strides
+    voxception_model:add(conv_block)
+  end
   -- multi scale, single rotation
   local scale_parallel_model = nn.Parallel(2, 2)
   for scale_index = 1, number_of_scales do
@@ -161,7 +170,7 @@ function define_voxception_model(input_size, n_outputs, number_of_filters, numbe
   end
 
   -- multi scale, multiple rotations
-  local twidth = number_planes * number_of_scales * ((input_size / 8)^3)
+  local twidth = number_planes * number_of_scales * ((input_size/prod_strides)^3)
   local model_for_single_rotation = nn.Sequential()
   model_for_single_rotation:add(scale_parallel_model)
   model_for_single_rotation:add(nn.Reshape(1, twidth))
@@ -169,12 +178,13 @@ function define_voxception_model(input_size, n_outputs, number_of_filters, numbe
   for rotation_index = 1, number_of_rotations do
     rotation_parallel_model:add(model_for_single_rotation:clone())
   end
+  --
 
   -- fully connected layers on top
   local full_model = nn.Sequential()
   full_model:add(rotation_parallel_model)
   full_model:add(nn.SpatialMaxPooling(1, number_of_rotations))
-  full_model:add(nn.Reshape(twidth))
+  full_model:add(nn.JoinTable(1))
   local kFullyConnectedMultiplier = 128
   full_model:add(nn.Linear(twidth, kFullyConnectedMultiplier * number_planes))
   full_model:add(nn.ReLU())
@@ -182,72 +192,14 @@ function define_voxception_model(input_size, n_outputs, number_of_filters, numbe
   full_model:add(nn.Linear(kFullyConnectedMultiplier * number_planes, n_outputs))
   full_model:add(nn.LogSoftMax())
   full_model = full_model:cuda()
-  full_model = cudnn.convert(full_model, cudnn)
-  -- sharing parameters
+  --full_model = cudnn.convert(full_model, cudnn)
+  ----[[ sharing parameters
   for rotation_index = 2, number_of_rotations do
     local current_module = full_model:get(1):get(rotation_index)
     current_module:share(full_model:get(1):get(1), 'weight', 'bias', 'gradWeight', 'gradBias')
   end
+  --]]
   full_model:training()
   print(full_model)
   return full_model
 end
-
---voxception resnet model from brock et al.
-function define_voxception_resnet_model(input_size, n_outputs, number_of_filters, number_of_blocks, number_of_scales, number_of_rotations)
-
-  -- voxception resnet model: single scale, single rotation
-  local resnet_model = nn.Sequential()
-  local number_planes = 1
-  --initial convolution
-  resnet_model:add(nn.VolumetricConvolution(1, 32, 3, 3, 3, 1, 1, 1, 1, 1, 1))
-  number_planes = 32
-  --add blocks: each block consits of 3xvrn with number_of_filters:=1 and 1xdownsampling with number_of_filters=number_of_filters
-  for block_index = 1, number_of_blocks do
-    local resnet_block = voxception_resnet_block(number_planes, 1, 1)
-    resnet_model:add(resnet_block:clone())
-    resnet_model:add(resnet_block:clone())
-    resnet_model:add(resnet_block:clone())
-    voxception_downsample_block(number_planes, number_of_filters)
-    number_planes = number_planes * number_of_filters
-  end
-  --TODO: final 3x3x3 res-convolution
-
-  -- multi scale, single rotation
-  local scale_parallel_model = nn.Parallel(2, 2)
-  for scale_index = 1, number_of_scales do
-    scale_parallel_model:add(resnet_model:clone())
-  end
-
-  -- multi scale, multiple rotations
-  local twidth = number_planes * number_of_scales * ((input_size / 8)^3)
-  local model_for_single_rotation = nn.Sequential()
-  model_for_single_rotation:add(scale_parallel_model)
-  model_for_single_rotation:add(nn.Reshape(1, twidth))
-  local rotation_parallel_model = nn.Parallel(2, 2)
-  for rotation_index = 1, number_of_rotations do
-    rotation_parallel_model:add(model_for_single_rotation:clone())
-  end
-
-  -- fully connected layers on top
-  local full_model = nn.Sequential()
-  full_model:add(rotation_parallel_model)
-  full_model:add(nn.SpatialMaxPooling(1, number_of_rotations))
-  full_model:add(nn.Reshape(twidth))
-  local kFullyConnectedMultiplier = 128
-  full_model:add(nn.Linear(twidth, kFullyConnectedMultiplier * number_planes))
-  full_model:add(nn.ReLU())
-  full_model:add(nn.Dropout())
-  full_model:add(nn.Linear(kFullyConnectedMultiplier * number_planes, n_outputs))
-  full_model:add(nn.LogSoftMax())
-  full_model = full_model:cuda()
-  full_model = cudnn.convert(full_model, cudnn)
-  -- sharing parameters
-  for rotation_index = 2, number_of_rotations do
-    local current_module = full_model:get(1):get(rotation_index)
-    current_module:share(full_model:get(1):get(1), 'weight', 'bias', 'gradWeight', 'gradBias')
-  end
-  full_model:training()
-  print(full_model)
-  return full_model
-end 

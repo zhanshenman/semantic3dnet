@@ -29,10 +29,11 @@ function define_constants()
   opt.kNumberOfScales = cpp_options.kDefaultNumberOfScales
   opt.kNumberOfRotations = cpp_options.kDefaultNumberOfRotations
   opt.kSmallPrintingInterval = 2
+  opt.initial_nr_planes = 16
   opt.number_of_filters = 2
-  opt.number_blocks = 4
+  opt.number_blocks = 1
   opt.kLargePrintingInterval = 100
-  opt.kWarmStart = true
+  opt.kWarmStart = false
   opt.kModelDumpName = '../dump/model_dump'
   opt.kOptimStateDumpName = '../dump/optim_state_dump'
   opt.kStreamingPath = '../data/benchmark/sg28_station4_intensity_rgb_train.txt'

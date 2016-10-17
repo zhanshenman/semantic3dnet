@@ -15,17 +15,17 @@ torch.manualSeed(10000)
 cutorch.manualSeed(10000)
 local opt = define_constants()
 
-
 --local optim_method = optim.sgd
 local optim_method = optim.adadelta
 
 print('started loading')
---local train = load_point_cloud('../data/benchmark/sg27_station1_intensity_rgb_train.txt_aggregated.txt', 1000, opt)
---local train = load_point_cloud('../data/benchmark/bildstein_station3_xyz_intensity_rgb_train.txt_aggregated.txt', 10000, opt)
-local train = load_point_cloud('../data/benchmark/train_all.txt_aggregated.txt', 130000, opt)
+--local train = load_point_cloud('../data/benchmark/sg27_station1_intensity_rgb_train.txt_aggregated.txt', 50, opt)
+local train = load_point_cloud('../data/benchmark/bildstein_station1_xyz_intensity_rgb_train.txt_aggregated.txt', 200, opt)
+--local train = load_point_cloud('../data/benchmark/train_all.txt_aggregated.txt', 130000, opt)
 print('nr. training samples', train.data:size())
 print('nr. labels', train.labels:size())
-local test = load_point_cloud('../data/benchmark/sg27_station2_intensity_rgb_valid.txt_aggregated.txt', 1000, opt)
+--local test = load_point_cloud('../data/benchmark/sg27_station2_intensity_rgb_valid.txt_aggregated.txt', 50, opt)
+local test = load_point_cloud('../data/benchmark/bildstein_station1_xyz_intensity_rgb_train.txt_aggregated.txt', 200, opt)
 print(test.data:size())
 print(test.labels:size())
 local model
@@ -42,8 +42,8 @@ else
   optim_state.epoch = 1
   set_up_loader(optim_state.epoch, opt)
   --model = define_vgg_model(opt.kSide, opt.n_outputs, opt.number_of_filters, opt.kNumberOfScales, opt.kNumberOfRotations)
-  model = define_voxception_resnet_model(opt.kSide, opt.n_outputs, opt.number_of_filters, opt.number_blocks, opt.kNumberOfScales, opt.kNumberOfRotations)
-  --model = define_voxception_model(opt.kSide, opt.n_outputs, opt.number_of_filters, opt.number_blocks, opt.kNumberOfScales, opt.kNumberOfRotations)
+  -- model = define_voxception_resnet_model(opt.kSide, opt.n_outputs, opt.initial_nr_planes, opt.number_of_filters, opt.number_blocks, opt.kNumberOfScales, opt.kNumberOfRotations)
+  model = define_voxception_model(opt.kSide, opt.n_outputs, opt.initial_nr_planes, opt.number_of_filters, opt.number_blocks, opt.kNumberOfScales, opt.kNumberOfRotations)
 end
 optim_state.learningRate=opt.learningRate
 optim_state.learningRateDecay=opt.learningRateDecay
@@ -53,11 +53,10 @@ optim_state.weightDecay = opt.weightDecay
 
 
 local criterion = nn.ClassNLLCriterion()
-local criterion = criterion:cuda()
-criterion = cudnn.convert(criterion, cudnn)
+criterion = criterion:cuda()
+--criterion = cudnn.convert(criterion, cudnn)
 
 local parameters, gradParameters = model:getParameters()
-
 local batch
 local batch_feval = function(x)
   if x ~= parameters then
